@@ -10,11 +10,11 @@
       "type": "string"
     },
     "email": {
-      "type": "boolean"
+      "type": "string"
     }
   },
   "required": [
     "name"
   ],
-  "additionalProperties": false
+  "additionalProperties": true
 }

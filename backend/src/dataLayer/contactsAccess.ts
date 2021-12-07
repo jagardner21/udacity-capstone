@@ -1,4 +1,5 @@
-const XAWS = require('aws-xray-sdk')
+// const XAWS = require('aws-xray-sdk')
+const AWS = require('aws-sdk')
 import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 import { createLogger } from '../utils/logger'
 const logger = createLogger('dataLayer')
@@ -8,18 +9,18 @@ import { UpdateContactRequest } from '../requests/UpdateContactRequest'
 function createDynamoDBClient() {
   if (process.env.IS_OFFLINE) {
     console.log('Creating a local DynamoDB instance')
-    return new XAWS.DynamoDB.DocumentClient({
+    return new AWS.DynamoDB.DocumentClient({
       region: 'localhost',
       endpoint: 'http://localhost:8000'
     })
   }
-  return new XAWS.DynamoDB.DocumentClient()
+  return new AWS.DynamoDB.DocumentClient()
 }
 
 export class ContactData {
   constructor(
     private readonly dynamoDBClient: DocumentClient = createDynamoDBClient(),
-    private readonly S3 = new XAWS.S3({signatureVersion: 'v4'}),
+    private readonly S3 = new AWS.S3({signatureVersion: 'v4'}),
     private readonly contactsTable = process.env.CONTACTS_TABLE,
     private readonly contactsTableIndex = process.env.USER_ID_INDEX,
     private readonly bucket = process.env.ATTACHMENT_S3_BUCKET

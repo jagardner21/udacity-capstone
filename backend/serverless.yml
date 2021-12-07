@@ -112,7 +112,7 @@ functions:
     events:
       - http:
           method: post
-          path: contacts/{contactsId}/attachment
+          path: contacts/{contactId}/attachment
           cors: true
           authorizer: Auth
     iamRoleStatements:
