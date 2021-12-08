@@ -74,7 +74,7 @@ export class ContactData {
           TableName: this.contactsTable,
           Key: {
             userId,
-            contact
+            contactId
           }, 
           UpdateExpression:
             'set #name = :name, #phoneNumber = :phoneNumber, #email = :email',
