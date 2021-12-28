@@ -35,6 +35,8 @@ export async function patchContact(
   contactId: string,
   updatedContact: UpdateContactRequest
 ): Promise<void> {
+  console.log("MADE IT HERE")
+  console.log(`URL: ${apiEndpoint}/contacts/${contactId}`)
   await Axios.patch(`${apiEndpoint}/contacts/${contactId}`, JSON.stringify(updatedContact), {
     headers: {
       'Content-Type': 'application/json',

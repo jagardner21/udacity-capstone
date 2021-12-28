@@ -11,7 +11,9 @@ import {
   Icon,
   Input,
   Image,
-  Loader
+  Loader,
+  Form,
+  FormGroup
 } from 'semantic-ui-react'
 
 import { createContact, deleteContact, getContacts, patchContact } from '../api/contacts-api'
@@ -28,7 +30,8 @@ interface ContactsState {
   newContactName: string,
   newContactPhoneNumber: string,
   newContactEmail: string,
-  loadingTodos: boolean
+  loadingContacts: boolean,
+  modified: boolean
 }
 
 export class Contacts extends React.PureComponent<ContactsProps, ContactsState> {
@@ -37,109 +40,120 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
     newContactName: '',
     newContactPhoneNumber: '',
     newContactEmail: '',
-    loadingTodos: true
+    loadingContacts: true,
+    modified: false
   }
 
-  handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault()
     let { name, value } = event.target
     this.setState({ [name]: value } as Pick<ContactsState, any>)
+    this.setState({modified: true})
+}
+
+  onEditButtonClick = (contactId: string) => {
+    this.props.history.push(`/contacts/${contactId}/edit`)
   }
 
-  // handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   this.setState({ newTodoName: event.target.value })
-  // }
-
-  onEditButtonClick = (todoId: string) => {
-    this.props.history.push(`/todos/${todoId}/edit`)
-  }
-
-  onTodoCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+  onContactCreate = async (event: React.SyntheticEvent) => {
+    event.preventDefault()
+    console.log(`New Contact Name: ${this.state.newContactName}`)
     try {
-      const dueDate = this.calculateDueDate()
-      const newTodo = await createTodo(this.props.auth.getIdToken(), {
-        name: this.state.newTodoName,
-        dueDate
+      if(!this.state.modified){
+        alert("No contact details entered for the new contact. Please enter new contact details before clicking 'Add New Contact'.")
+        return
+      }
+      const newContact = await createContact(this.props.auth.getIdToken(), {
+        name: this.state.newContactName,
+        phoneNumber: this.state.newContactPhoneNumber,
+        email: this.state.newContactEmail
       })
       this.setState({
-        todos: [...this.state.todos, newTodo],
-        newTodoName: ''
+        contacts: [...this.state.contacts, newContact],
+        newContactName: '',
+        newContactPhoneNumber: '',
+        newContactEmail: ''
       })
-    } catch {
-      alert('Todo creation failed')
+    } catch (error){
+      alert(`Contact creation failed. Error: ${error.message}`)
     }
   }
 
-  onTodoDelete = async (todoId: string) => {
+  onContactDelete = async (contactId: string) => {
     try {
-      await deleteTodo(this.props.auth.getIdToken(), todoId)
+      await deleteContact(this.props.auth.getIdToken(), contactId)
       this.setState({
-        todos: this.state.todos.filter(todo => todo.todoId != todoId)
+        contacts: this.state.contacts.filter(contact => contact.contactId != contactId)
       })
     } catch {
-      alert('Todo deletion failed')
-    }
-  }
-
-  onTodoCheck = async (pos: number) => {
-    try {
-      const todo = this.state.todos[pos]
-      await patchTodo(this.props.auth.getIdToken(), todo.todoId, {
-        name: todo.name,
-        dueDate: todo.dueDate,
-        done: !todo.done
-      })
-      this.setState({
-        todos: update(this.state.todos, {
-          [pos]: { done: { $set: !todo.done } }
-        })
-      })
-    } catch {
-      alert('Todo deletion failed')
+      alert('Contact deletion failed')
     }
   }
 
   async componentDidMount() {
     try {
-      const todos = await getTodos(this.props.auth.getIdToken())
+      const contacts = await getContacts(this.props.auth.getIdToken())
       this.setState({
-        todos,
-        loadingTodos: false
+        contacts,
+        loadingContacts: false
       })
-    } catch (e) {
-      alert(`Failed to fetch todos: ${e.message}`)
+    } catch (error) {
+      alert(`Failed to fetch contacts: ${error.message}`)
     }
   }
 
   render() {
     return (
       <div>
-        <Header as="h1">TODOs</Header>
+        <Header as="h1">Contacts</Header>
+        <hr/>
+        {this.renderCreateContactInput()}
 
-        {this.renderCreateTodoInput()}
-
-        {this.renderTodos()}
+        {this.renderContacts()}
       </div>
     )
   }
 
-  renderCreateTodoInput() {
+  renderCreateContactInput() {
     return (
-      <Grid.Row>
+      <Grid.Row padded>
+        <h4>Create New Contact</h4>
         <Grid.Column width={16}>
-          <Input
-            action={{
-              color: 'teal',
-              labelPosition: 'left',
-              icon: 'add',
-              content: 'New task',
-              onClick: this.onTodoCreate
-            }}
-            fluid
-            actionPosition="left"
-            placeholder="To change the world..."
-            onChange={this.handleNameChange}
-          />
+          <Form>
+            <FormGroup>
+              <Form.Field>
+                <label>Name: </label>
+                <input
+                  type="text"
+                  name="newContactName"
+                  placeholder="ex. Anthony L. Ray"
+                  value={this.state.newContactName}
+                  onChange={this.handleChange}
+                  />
+              </Form.Field>
+              <Form.Field>
+                <label>Phone Number: </label>
+                <input
+                  type="text"
+                  name="newContactPhoneNumber"
+                  placeholder="ex. 8008492568"
+                  value={this.state.newContactPhoneNumber}
+                  onChange={this.handleChange}
+                  />
+              </Form.Field>
+              <Form.Field>
+                <label>Email: </label>
+                <input
+                  type="text"
+                  name="newContactEmail"
+                  placeholder="ex. sir@mixalot.com"
+                  value={this.state.newContactEmail}
+                  onChange={this.handleChange}
+                  />
+              </Form.Field>
+              <Form.Button onClick={this.onContactCreate}>Add New Contact</Form.Button>
+            </FormGroup>
+          </Form>
         </Grid.Column>
         <Grid.Column width={16}>
           <Divider />
@@ -148,62 +162,58 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
     )
   }
 
-  renderTodos() {
-    if (this.state.loadingTodos) {
+  renderContacts() {
+    if (this.state.loadingContacts) {
       return this.renderLoading()
     }
 
-    return this.renderTodosList()
+    return this.renderContactsList()
   }
 
   renderLoading() {
     return (
       <Grid.Row>
         <Loader indeterminate active inline="centered">
-          Loading TODOs
+          Loading Contacts
         </Loader>
       </Grid.Row>
     )
   }
 
-  renderTodosList() {
+  renderContactsList() {
     return (
       <Grid padded>
-        {this.state.todos.map((todo, pos) => {
+        <h4>Contacts List</h4>
+        {this.state.contacts.map((contact, pos) => {
           return (
-            <Grid.Row key={todo.todoId}>
-              <Grid.Column width={1} verticalAlign="middle">
-                <Checkbox
-                  onChange={() => this.onTodoCheck(pos)}
-                  checked={todo.done}
-                />
+            <Grid.Row key={contact.contactId}>
+              <Grid.Column width={4} verticalAlign="middle">
+                {contact.name}
               </Grid.Column>
-              <Grid.Column width={10} verticalAlign="middle">
-                {todo.name}
+              <Grid.Column width={5} verticalAlign="middle">
+                Ph: {contact.phoneNumber}
               </Grid.Column>
-              <Grid.Column width={3} floated="right">
-                {todo.dueDate}
+              <Grid.Column width={5} verticalAlign="middle">
+                Email: {contact.email}
               </Grid.Column>
               <Grid.Column width={1} floated="right">
-                <Button
+              <Button
                   icon
                   color="blue"
-                  onClick={() => this.onEditButtonClick(todo.todoId)}
+                  onClick={() => this.onEditButtonClick(contact.contactId)}
                 >
                   <Icon name="pencil" />
                 </Button>
-              </Grid.Column>
-              <Grid.Column width={1} floated="right">
                 <Button
                   icon
                   color="red"
-                  onClick={() => this.onTodoDelete(todo.todoId)}
+                  onClick={() => this.onContactDelete(contact.contactId)}
                 >
                   <Icon name="delete" />
                 </Button>
               </Grid.Column>
-              {todo.attachmentUrl && (
-                <Image src={todo.attachmentUrl} size="small" wrapped />
+              {contact.attachmentUrl && (
+                <Image src={contact.attachmentUrl} size="small" wrapped />
               )}
               <Grid.Column width={16}>
                 <Divider />
@@ -213,12 +223,5 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
         })}
       </Grid>
     )
-  }
-
-  calculateDueDate(): string {
-    const date = new Date()
-    date.setDate(date.getDate() + 7)
-
-    return dateFormat(date, 'yyyy-mm-dd') as string
   }
 }
