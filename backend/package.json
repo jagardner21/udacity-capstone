@@ -28,6 +28,6 @@
     "typescript": ">=3.8.0",
     "webpack": "^4.29.0"
   },
-  "author": "Ivan Mushketyk",
+  "author": "Jesse Gardner",
   "license": "MIT"
 }
