@@ -57,7 +57,6 @@ export class Contacts extends React.PureComponent<ContactsProps, ContactsState> 
 
   onContactCreate = async (event: React.SyntheticEvent) => {
     event.preventDefault()
-    console.log(`New Contact Name: ${this.state.newContactName}`)
     try {
       if(!this.state.modified){
         alert("No contact details entered for the new contact. Please enter new contact details before clicking 'Add New Contact'.")
